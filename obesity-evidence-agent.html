@@ -785,18 +785,13 @@
       ? `The strongest match is <strong>${escapeHtml(best.title)}</strong>, which supports the following evidence:`
       : `Based on the repository, the most relevant evidence begins with <strong>${escapeHtml(best.title)}</strong>:`;
 
-    els.answer.innerHTML = `<p>${synthesis}</p><ul>${bullets}</ul>`;
+   els.answer.innerHTML = `<p>${synthesis}</p><ul>${bullets}</ul><p class="small">Ranking reflects query match, keyword alignment, source priority, and recency. No outside reasoning was added.</p>`;
     renderRepository();
-
   } catch (err) {
     console.error("Error connecting to backend:", err);
     els.answer.innerHTML = '<strong style="color: red;">Failed to connect to backend server. Please try again.</strong>';
   }
 }
-        <p class="small">Ranking reflects query match, keyword alignment, source priority, and recency. No outside reasoning was added.</p>
-      `;
-      renderRepository();
-    }
 
     function renderStats() {
       const docs = state.documents;
