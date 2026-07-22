@@ -638,35 +638,24 @@
       return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
 
-    function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        return {
-          documents: [...sampleDocuments],
-          settings: {
-            keywords: 'obesity, glp-1, bariatric surgery, diabetes',
-            exclude: 'animal study, editorial',
-            recency: '365',
-            maxResults: 5,
-            strictMode: true,
-            includeCitations: true,
-            shortSynthesis: true,
-            autoIndex: true,
-            requireExact: true,
-            sourceFilters: { guideline: true, article: true, trial: true }
-          },
-          crawlQueue: [
-            {
-              id: cryptoId(),
-              title: 'Incoming guideline update',
-              type: 'guideline',
-              date: '2026-07-01',
-              citation: 'crawler-guideline-update-1',
-              text: 'New obesity guideline update with expanded coverage of medication use, follow-up cadence, and evidence-based thresholds for escalation of therapy.',
-              status: 'queued'
-            }
-          ]
-        };
+    async function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let localData = raw ? JSON.parse(raw) : {};
+
+  try {
+    // Fetch live documents from your Python backend
+    const res = await fetch('/api/obesity-evidence/documents');
+    const docs = await res.json();
+    localData.documents = docs;
+  } catch (err) {
+    console.error("Could not load backend documents, falling back to local:", err);
+    if (!localData.documents) {
+      localData.documents = [...sampleDocuments];
+    }
+  }
+
+  return localData;
+}
       }
       try {
         const parsed = JSON.parse(raw);
@@ -781,44 +770,60 @@
       return (scored[0]?.s || sentences[0] || text || '').trim();
     }
 
-    function answerQuery() {
-      const query = els.question.value.trim();
-      if (!query) {
-        els.answer.innerHTML = '<strong>Ask a clinical question to search the repository.</strong>';
-        return;
-      }
-      const selectedSources = Array.from(els.askSource.selectedOptions).map(o => o.value);
-      const ranked = state.documents
-        .map(doc => rankDocument(doc, query, selectedSources))
-        .filter(Boolean)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, Number(state.settings.maxResults || 5));
+    async function answerQuery() {
+  const query = els.question.value.trim();
+  if (!query) {
+    els.answer.innerHTML = '<strong>Ask a clinical question to search the repository.</strong>';
+    return;
+  }
 
-      if (!ranked.length || ranked[0].score <= 0) {
-        els.answer.innerHTML = `
-          <div class="fallback">Not found in the repository.</div>
-          <p>The agent did not find a strong match for: <em>${escapeHtml(query)}</em></p>
-          <p class="small">Try broadening the query, adjusting keywords, or adding more evidence to the repository.</p>
-        `;
-        renderRepository();
-        return;
-      }
+  els.answer.innerHTML = '<em>Searching repository and generating answer...</em>';
 
-      const best = ranked[0];
-      const bullets = ranked.map(r => {
-        const snippet = extractSnippet(r.text, query);
-        const cite = state.settings.includeCitations ? `<strong>${escapeHtml(r.citation || r.id)}</strong>` : '<strong>Source</strong>';
-        return `<li><span>${escapeHtml(r.title)}</span> — ${escapeHtml(snippet)} ${state.settings.includeCitations ? `(${cite})` : ''}</li>`;
-      }).join('');
+  try {
+    // Send the query directly to your Python backend
+    const response = await fetch('/api/obesity-evidence/documents');
+    const docs = await response.json();
 
-      const synthesis = state.settings.shortSynthesis
-        ? `The strongest match is <strong>${escapeHtml(best.title)}</strong>, which supports the following repository-based takeaways: ${ranked.slice(0, 3).map(r => escapeHtml(extractSnippet(r.text, query))).join(' ')}.`
-        : `Based on the repository, the most relevant evidence begins with <strong>${escapeHtml(best.title)}</strong>. Review the ranked sources below for the exact passages and citations.`;
+    // Refresh state with latest backend documents
+    state.documents = docs;
 
+    // Perform ranking with updated backend docs
+    const selectedSources = Array.from(els.askSource.selectedOptions).map(o => o.value);
+    const ranked = state.documents
+      .map(doc => rankDocument(doc, query, selectedSources))
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, Number(state.settings.maxResults || 5));
+
+    if (!ranked.length || ranked[0].score <= 0) {
       els.answer.innerHTML = `
-        <strong>Answer built from on-file evidence.</strong>
-        <p>${synthesis}</p>
-        <ol>${bullets}</ol>
+        <div class="fallback">Not found in the repository.</div>
+        <p>The agent did not find a strong match for: <em>${escapeHtml(query)}</em></p>
+        <p class="small">Try broadening the query, adjusting keywords, or adding more evidence to the repository.</p>
+      `;
+      renderRepository();
+      return;
+    }
+
+    const best = ranked[0];
+    const bullets = ranked.map(r => {
+      const snippet = extractSnippet(r.text, query);
+      const cite = state.settings.includeCitations ? `<strong>${escapeHtml(r.citation || r.id)}</strong>` : '';
+      return `<li><span>${escapeHtml(r.title)}</span> — ${cite} ${escapeHtml(snippet)}</li>`;
+    }).join('');
+
+    const synthesis = state.settings.shortSynthesis
+      ? `The strongest match is <strong>${escapeHtml(best.title)}</strong>, which supports the following evidence:`
+      : `Based on the repository, the most relevant evidence begins with <strong>${escapeHtml(best.title)}</strong>:`;
+
+    els.answer.innerHTML = `<p>${synthesis}</p><ul>${bullets}</ul>`;
+    renderRepository();
+
+  } catch (err) {
+    console.error("Error connecting to backend:", err);
+    els.answer.innerHTML = '<strong style="color: red;">Failed to connect to backend server. Please try again.</strong>';
+  }
+}
         <p class="small">Ranking reflects query match, keyword alignment, source priority, and recency. No outside reasoning was added.</p>
       `;
       renderRepository();
@@ -947,31 +952,48 @@
       };
     }
 
-    function addDocument(doc) {
-      state.documents.unshift({
-        id: doc.id || cryptoId(),
-        title: doc.title || 'Untitled document',
-        type: doc.type || 'article',
-        date: doc.date || new Date().toISOString().slice(0, 10),
-        citation: doc.citation || `source-${Date.now()}`,
-        population: doc.population || '',
-        intervention: doc.intervention || '',
-        keywords: Array.isArray(doc.keywords) ? doc.keywords : tokenize(doc.keywords || ''),
-        text: doc.text || '',
-        sourceUrl: doc.sourceUrl || ''
-      });
-      saveState();
-    }
+    async function addDocument(doc) {
+  try {
+    const res = await fetch('/api/obesity-evidence/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doc)
+    });
+    const record = await res.json();
+    
+    // Reload state from backend to show the new document on the UI
+    await loadState();
+    renderRepository();
+    return record;
+  } catch (err) {
+    console.error("Failed to add document to backend:", err);
+  }
+}
+async function uploadFileToBackend(file) {
+  const formData = new FormData();
+  formData.append('file', file);
 
-    function readFileAsText(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = reject;
-        reader.readAsText(file);
-      });
-    }
+  try {
+    if (els.importHint) els.importHint.textContent = `Uploading ${file.name}...`;
 
+    const res = await fetch('/api/obesity-evidence/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (res.ok) {
+      if (els.importHint) els.importHint.textContent = `Successfully uploaded ${file.name}!`;
+      // Refresh documents from backend
+      await loadState();
+      renderRepository();
+    } else {
+      if (els.importHint) els.importHint.textContent = `Upload failed (Status ${res.status})`;
+    }
+  } catch (err) {
+    console.error("Upload error:", err);
+    if (els.importHint) els.importHint.textContent = `Error connecting to backend server.`;
+  }
+}
     function parseImportedContent(name, text) {
       const ext = (name.split('.').pop() || '').toLowerCase();
       if (ext === 'json') {
