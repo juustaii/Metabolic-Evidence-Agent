@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Obesity Evidence Agent</title>
+  <style>
+    :root {
+      --bg: #f5f8fc;
+      --panel: rgba(255,255,255,0.92);
+      --panel-2: #ffffff;
+      --text: #17324d;
+      --muted: #5e6b7a;
+      --line: #d8e2ec;
+      --accent: #2563eb;
+      --accent-2: #0f766e;
+      --good: #16a34a;
+      --warn: #ca8a04;
+      --bad: #dc2626;
+      --shadow: 0 16px 40px rgba(23,50,77,.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #0f2f57 0%, #2563eb 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero:before {
+      content: "";
+      position: absolute;
+      inset: -40% -20% auto auto;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.22), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+    h1 {
+      margin: 14px 0 10px;
+      font-size: clamp(30px, 4.3vw, 54px);
+      line-height: 1.02;
+      letter-spacing: -.04em;
+      max-width: 11ch;
+    }
+    .hero p {
+      margin: 0;
+      max-width: 920px;
+      color: rgba(255,255,255,.9);
+      line-height: 1.55;
+      font-size: 16px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.14);
+      font-size: 13px;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .col {
+      display: grid;
+      gap: 18px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      backdrop-filter: blur(8px);
+    }
+    .panel h2, .panel h3 {
+      margin: 0 0 12px;
+      letter-spacing: -.02em;
+    }
+    .panel h2 { font-size: 20px; }
+    .panel h3 { font-size: 17px; }
+    .sub {
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+    .toolbar, .row, .row-3 { display: grid; gap: 12px; }
+    .toolbar { grid-template-columns: 1.7fr .9fr .7fr; }
+    .row { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      color: #29445f;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 13px;
+      font: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+    .field textarea { min-height: 96px; resize: vertical; }
+    .field input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      min-height: 46px;
+    }
+    .toggle-line small { color: var(--muted); }
+    .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 15px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: var(--accent); color: #fff; }
+    .secondary { background: #eaf2ff; color: #1d4ed8; }
+    .ghost { background: #edf2f7; color: var(--text); }
+    .danger { background: #fee2e2; color: var(--bad); }
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .stat .num {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -.05em;
+    }
+    .stat .label { color: var(--muted); font-size: 13px; }
+    .answer {
+      background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      min-height: 180px;
+    }
+    .answer strong { color: #0f2f57; }
+    .answer .fallback { color: var(--warn); font-weight: 800; }
+    .source-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .source-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .source-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .badge {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .g { background: var(--good); }
+    .a { background: var(--accent); }
+    .t { background: var(--warn); }
+    .meta { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .snippet { line-height: 1.55; font-size: 14px; }
+    .score { font-size: 12px; color: var(--muted); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .repo-item {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+      display: grid;
+      gap: 10px;
+    }
+    .repo-item h4 { margin: 0; }
+    .repo-item .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .small { font-size: 12px; color: var(--muted); }
+    .stack { display: grid; gap: 12px; }
+    .note {
+      border-left: 4px solid var(--accent-2);
+      background: #f4fffd;
+      color: #12544f;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #eef6ff;
+      border: 1px solid #cfe1ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    @media (max-width: 1120px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 860px) {
+      .toolbar, .row, .row-3, .grid-2, .grid-3, .mini-stats { grid-template-columns: 1fr; }
+      .shell { padding: 14px; }
+      .hero { padding: 22px; border-radius: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="eyebrow">Obesity Evidence Agent · strict retrieval · citations required</div>
+          <h1>Ask a clinical question and get the facts on file.</h1>
+          <p>
+            This is the working final product: upload obesity guidelines, journal articles, and current trials;
+            ask a question; and get a ranked evidence response that only uses the repository you control.
+            It includes local repository management, strict retrieval, settings persistence, import/export,
+            and a crawler inbox for new material.
+          </p>
+          <div class="chips">
+            <span class="chip">Guidelines</span>
+            <span class="chip">Journal articles</span>
+            <span class="chip">Current trials</span>
+            <span class="chip">Evidence-only answers</span>
+            <span class="chip">Settings saved locally</span>
+            <span class="chip">Import / export JSON</span>
+          </div>
+        </div>
+        <div class="status">Live in-browser prototype</div>
+      </div>
+      <div class="mini-stats" id="stats"></div>
+    </section>
+
+    <div class="main-grid">
+      <div class="col">
+        <section class="panel">
+          <h2>1) Ask the agent</h2>
+          <div class="sub">Type a clinical question. The answer is built only from the matched repository entries and will fall back to “not found in the repository” when evidence is missing.</div>
+          <div class="toolbar">
+            <div class="field">
+              <label for="question">Clinical question</label>
+              <textarea id="question" placeholder="Example: What do current guidelines say about GLP-1 therapy for adults with obesity and diabetes?"></textarea>
+            </div>
+            <div class="field">
+              <label for="askSource">Search sources</label>
+              <select id="askSource" multiple size="6"></select>
+              <div class="small">Hold Ctrl/Cmd to select multiple. Default is whatever is enabled in settings.</div>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <div class="stack">
+                <div class="toggle-line"><input type="checkbox" id="strictMode" checked /><label for="strictMode" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Strict retrieval only</label></div>
+                <div class="toggle-line"><input type="checkbox" id="includeCitations" checked /><label for="includeCitations" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Show citations</label></div>
+                <div class="toggle-line"><input type="checkbox" id="shortSynthesis" checked /><label for="shortSynthesis" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Short synthesis</label></div>
+                <div class="btns">
+                  <button class="primary" id="askBtn">Ask question</button>
+                  <button class="secondary" id="clearBtn">Clear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="answer" id="answer" style="margin-top:12px;">
+            <strong>Ready.</strong> Ask a question and I’ll return the most relevant repository evidence.
+          </div>
+          <div class="note" style="margin-top:12px;">
+            The logic is intentionally strict: it ranks only what is on file and refuses to invent an answer when the evidence is weak or missing.
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>2) Repository</h2>
+          <div class="sub">Add new documents manually or import text files. Each item becomes searchable immediately and is stored in your browser.</div>
+          <div class="row-3">
+            <div class="field">
+              <label for="docTitle">Title</label>
+              <input id="docTitle" placeholder="Document title" />
+            </div>
+            <div class="field">
+              <label for="docType">Source type</label>
+              <select id="docType">
+                <option value="guideline">Guideline</option>
+                <option value="article">Journal article</option>
+                <option value="trial">Current trial</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="docDate">Date</label>
+              <input id="docDate" type="date" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div class="field">
+              <label for="docCitation">Citation / source ID</label>
+              <input id="docCitation" placeholder="e.g. guideline-2026-01" />
+            </div>
+            <div class="field">
+              <label for="docKeywords">Keywords</label>
+              <input id="docKeywords" placeholder="GLP-1, BMI, bariatric surgery" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div class="field">
+              <label for="docPopulation">Population / focus</label>
+              <input id="docPopulation" placeholder="Adults with obesity and diabetes" />
+            </div>
+            <div class="field">
+              <label for="docIntervention">Intervention / topic</label>
+              <input id="docIntervention" placeholder="GLP-1, lifestyle, surgery, trial" />
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label for="docText">Repository text / abstract / excerpt</label>
+            <textarea id="docText" placeholder="Paste the key excerpt, abstract, summary, or guideline passage here."></textarea>
+          </div>
+          <div class="btns">
+            <button class="primary" id="addDocBtn">Add to repository</button>
+            <label class="secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:11px 15px;border-radius:999px;font-weight:700;">
+              Import file
+              <input id="fileImport" type="file" accept=".txt,.md,.json,.csv" style="display:none" />
+            </label>
+            <button class="ghost" id="exportBtn">Export JSON</button>
+            <button class="ghost" id="resetRepoBtn">Reset sample set</button>
+          </div>
+          <div class="small" id="importHint" style="margin-top:8px;"></div>
+          <div class="source-list" id="repoList"></div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="panel">
+          <h2>3) Search settings</h2>
+          <div class="sub">Tune relevance, source priorities, and answer behavior. These settings persist locally.</div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="keywords">Relevant keywords</label>
+              <input id="keywords" placeholder="GLP-1, bariatric surgery, BMI, pediatric obesity" />
+            </div>
+            <div class="field">
+              <label for="exclude">Excluded terms</label>
+              <input id="exclude" placeholder="animal study, editorial, unrelated" />
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top:12px;">
+            <div class="field">
+              <label for="recency">Recency window</label>
+              <select id="recency">
+                <option value="all">All time</option>
+                <option value="365">Last 12 months</option>
+                <option value="180">Last 6 months</option>
+                <option value="90">Last 90 days</option>
+                <option value="30">Last 30 days</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="maxResults">Max results</label>
+              <select id="maxResults">
+                <option>3</option>
+                <option selected>5</option>
+                <option>8</option>
+                <option>10</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top:12px;">
+            <div class="toggle-line"><input type="checkbox" id="autoIndex" checked /><label for="autoIndex" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Auto-index imported content</label></div>
+            <div class="toggle-line"><input type="checkbox" id="requireExact" checked /><label for="requireExact" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Prefer exact topic matches</label></div>
+          </div>
+          <div class="grid-3" style="margin-top:12px;">
+            <div class="toggle-line"><input type="checkbox" data-source-filter="guideline" id="srcGuideline" checked /><label for="srcGuideline" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Guidelines</label></div>
+            <div class="toggle-line"><input type="checkbox" data-source-filter="article" id="srcArticle" checked /><label for="srcArticle" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Articles</label></div>
+            <div class="toggle-line"><input type="checkbox" data-source-filter="trial" id="srcTrial" checked /><label for="srcTrial" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:700;">Trials</label></div>
+          </div>
+          <div class="btns">
+            <button class="primary" id="saveSettingsBtn">Save settings</button>
+            <button class="ghost" id="loadDefaultsBtn">Load defaults</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>4) Always-on crawler inbox</h2>
+          <div class="sub">Paste new abstracts, trial updates, or guideline excerpts here, then process them into the repository. This simulates the continuous crawler workflow inside the final product.</div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="crawlTitle">Crawler item title</label>
+              <input id="crawlTitle" placeholder="New source title" />
+            </div>
+            <div class="field">
+              <label for="crawlType">Crawler source type</label>
+              <select id="crawlType">
+                <option value="guideline">Guideline</option>
+                <option value="article">Journal article</option>
+                <option value="trial">Current trial</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top:12px;">
+            <div class="field">
+              <label for="crawlCitation">Crawler citation</label>
+              <input id="crawlCitation" placeholder="e.g. trial-NCT12345" />
+            </div>
+            <div class="field">
+              <label for="crawlDate">Crawler date</label>
+              <input id="crawlDate" type="date" />
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label for="crawlText">Crawler text</label>
+            <textarea id="crawlText" placeholder="Paste the new material the crawler found."></textarea>
+          </div>
+          <div class="btns">
+            <button class="primary" id="queueCrawlBtn">Queue item</button>
+            <button class="secondary" id="processCrawlBtn">Process queue</button>
+            <button class="ghost" id="clearCrawlBtn">Clear queue</button>
+          </div>
+          <div class="source-list" id="crawlList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>5) What’s on file</h2>
+          <div class="sub">This preview shows the actual repository items that the agent can search. Everything below is searchable.</div>
+          <div class="source-list" id="repoPreview"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="panel" style="margin-top:18px;">
+      <h2>Backend contract</h2>
+      <div class="sub">When you connect a real backend later, this is the shape the UI expects.</div>
+      <pre id="contract"></pre>
+      <div class="footer">
+        <div>Use this as a website starter or hand it to a developer for backend integration.</div>
+        <div>Strict retrieval · citations required · not-found fallback</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'obesity-evidence-agent-v1';
+    let state;
+
+    const sampleDocuments = [
+      {
+        id: cryptoId(),
+        title: 'Obesity management guideline for adults',
+        type: 'guideline',
+        date: '2026-01-15',
+        citation: 'guideline-2026-01',
+        population: 'Adults with obesity and cardiometabolic risk',
+        intervention: 'Lifestyle therapy, pharmacotherapy, bariatric surgery',
+        keywords: ['obesity', 'adults', 'glp-1', 'bariatric surgery', 'bmi'],
+        text: 'Recommends stepwise obesity treatment using intensive lifestyle intervention, anti-obesity pharmacotherapy for eligible patients, and bariatric surgery for selected individuals with severe obesity. GLP-1 receptor agonists may be considered for adults who meet clinical criteria. Evidence quality is highest when outcomes are supported by randomized trials and long-term follow-up.',
+        sourceUrl: ''
+      },
+      {
+        id: cryptoId(),
+        title: 'Journal article on GLP-1 therapy in obesity',
+        type: 'article',
+        date: '2025-11-02',
+        citation: 'article-2025-11-glp1',
+        population: 'Adults with obesity and type 2 diabetes',
+        intervention: 'GLP-1 therapy',
+        keywords: ['glp-1', 'diabetes', 'obesity', 'weight loss', 'outcomes'],
+        text: 'This article reports clinically meaningful weight reduction, improved glycemic outcomes, and tolerability considerations in adults with obesity and diabetes. The article discusses adherence, adverse effects, and the importance of shared decision-making. The authors emphasize that results should be interpreted in the context of existing obesity guidelines.',
+        sourceUrl: ''
+      },
+      {
+        id: cryptoId(),
+        title: 'Active clinical trial registry entry',
+        type: 'trial',
+        date: '2026-04-20',
+        citation: 'trial-NCT-OBESITY-2041',
+        population: 'Adults with severe obesity',
+        intervention: 'Next-generation incretin therapy',
+        keywords: ['trial', 'obesity', 'incretin', 'phase 3', 'recruiting'],
+        text: 'Recruiting phase 3 trial evaluating a next-generation incretin therapy for adults with severe obesity. Eligibility focuses on BMI thresholds, safety criteria, and prior treatment history. Primary outcomes include weight loss, metabolic markers, and adverse event reporting.',
+        sourceUrl: ''
+      },
+      {
+        id: cryptoId(),
+        title: 'Pediatric obesity review',
+        type: 'article',
+        date: '2025-09-10',
+        citation: 'article-2025-09-peds',
+        population: 'Children and adolescents with obesity',
+        intervention: 'Family-based behavioral treatment',
+        keywords: ['pediatric obesity', 'children', 'adolescents', 'family-based', 'behavioral treatment'],
+        text: 'Summarizes pediatric obesity management emphasizing family-based behavioral treatment, nutrition counseling, physical activity, and careful consideration of medication use. The review highlights the need for age-appropriate assessment and ongoing monitoring.',
+        sourceUrl: ''
+      }
+    ];
+
+    state = loadState();
+
+    const backendContract = {
+      question: 'What do current guidelines say about GLP-1 therapy in adults with obesity?',
+      mode: 'strict_retrieval',
+      filters: {
+        source_types: ['guideline', 'article', 'trial'],
+        keywords: ['GLP-1', 'obesity', 'diabetes'],
+        excluded_terms: ['animal study', 'editorial']
+      },
+      results: [
+        {
+          title: 'Obesity management guideline for adults',
+          source_type: 'guideline',
+          citation: 'guideline-2026-01',
+          snippet: 'Recommends stepwise obesity treatment ...',
+          published_at: '2026-01-15',
+          score: 92
+        }
+      ],
+      answer: 'Based on the repository, ...',
+      fallback: 'not found in the repository'
+    };
+
+    const els = {
+      stats: document.getElementById('stats'),
+      askSource: document.getElementById('askSource'),
+      question: document.getElementById('question'),
+      askBtn: document.getElementById('askBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      answer: document.getElementById('answer'),
+      repoList: document.getElementById('repoList'),
+      repoPreview: document.getElementById('repoPreview'),
+      crawlList: document.getElementById('crawlList'),
+      importHint: document.getElementById('importHint'),
+      contract: document.getElementById('contract'),
+      fileImport: document.getElementById('fileImport'),
+      addDocBtn: document.getElementById('addDocBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      resetRepoBtn: document.getElementById('resetRepoBtn'),
+      saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+      loadDefaultsBtn: document.getElementById('loadDefaultsBtn'),
+      queueCrawlBtn: document.getElementById('queueCrawlBtn'),
+      processCrawlBtn: document.getElementById('processCrawlBtn'),
+      clearCrawlBtn: document.getElementById('clearCrawlBtn')
+    };
+
+    function cryptoId() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return {
+          documents: [...sampleDocuments],
+          settings: {
+            keywords: 'obesity, glp-1, bariatric surgery, diabetes',
+            exclude: 'animal study, editorial',
+            recency: '365',
+            maxResults: 5,
+            strictMode: true,
+            includeCitations: true,
+            shortSynthesis: true,
+            autoIndex: true,
+            requireExact: true,
+            sourceFilters: { guideline: true, article: true, trial: true }
+          },
+          crawlQueue: [
+            {
+              id: cryptoId(),
+              title: 'Incoming guideline update',
+              type: 'guideline',
+              date: '2026-07-01',
+              citation: 'crawler-guideline-update-1',
+              text: 'New obesity guideline update with expanded coverage of medication use, follow-up cadence, and evidence-based thresholds for escalation of therapy.',
+              status: 'queued'
+            }
+          ]
+        };
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          documents: parsed.documents?.length ? parsed.documents : [...sampleDocuments],
+          settings: {
+            ...parsed.settings,
+            sourceFilters: parsed.settings?.sourceFilters || { guideline: true, article: true, trial: true }
+          },
+          crawlQueue: parsed.crawlQueue || []
+        };
+      } catch {
+        return {
+          documents: [...sampleDocuments],
+          settings: {
+            keywords: 'obesity, glp-1, bariatric surgery, diabetes',
+            exclude: 'animal study, editorial',
+            recency: '365',
+            maxResults: 5,
+            strictMode: true,
+            includeCitations: true,
+            shortSynthesis: true,
+            autoIndex: true,
+            requireExact: true,
+            sourceFilters: { guideline: true, article: true, trial: true }
+          },
+          crawlQueue: []
+        };
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderStats();
+      renderRepository();
+      renderCrawlQueue();
+    }
+
+    function normalizeText(text) {
+      return (text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function tokenize(text) {
+      return normalizeText(text).split(' ').filter(Boolean);
+    }
+
+    function sourceBadge(type) {
+      if (type === 'guideline') return '<span class="badge g">Guideline</span>';
+      if (type === 'trial') return '<span class="badge t">Trial</span>';
+      return '<span class="badge a">Article</span>';
+    }
+
+    function rankDocument(doc, query, selectedSources) {
+      const queryTokens = tokenize(query);
+      const allKeywords = tokenize((state.settings.keywords || '') + ' ' + (doc.keywords || []).join(' '));
+      const docText = normalizeText([doc.title, doc.citation, doc.population, doc.intervention, (doc.keywords || []).join(' '), doc.text].join(' '));
+      const selected = selectedSources && selectedSources.length ? selectedSources : getEnabledSources();
+      if (!selected.includes(doc.type)) return null;
+
+      const excluded = tokenize(state.settings.exclude || '');
+      for (const term of excluded) {
+        if (term && docText.includes(term)) return null;
+      }
+
+      const recencyWeight = recencyScore(doc.date, state.settings.recency);
+      const exactTitle = queryTokens.filter(t => doc.title.toLowerCase().includes(t)).length;
+      const titleHits = queryTokens.filter(t => tokenize(doc.title).includes(t)).length;
+      const bodyHits = queryTokens.filter(t => docText.includes(t)).length;
+      const keywordHits = queryTokens.filter(t => allKeywords.includes(t)).length;
+      const settingsHits = tokenize(state.settings.keywords || '').filter(t => docText.includes(t)).length;
+
+      let score = (bodyHits * 10) + (titleHits * 14) + (keywordHits * 6) + (settingsHits * 3) + recencyWeight;
+      if (state.settings.requireExact && exactTitle > 0) score += 12;
+      if (doc.type === 'guideline') score += 10;
+      if (doc.type === 'article') score += 4;
+      if (doc.type === 'trial') score += 2;
+      if (!queryTokens.length) score = recencyWeight + 5;
+      if (doc.title.toLowerCase().includes(query.toLowerCase())) score += 20;
+      return { ...doc, score, titleHits, bodyHits, keywordHits, recencyWeight };
+    }
+
+    function recencyScore(date, windowDays) {
+      if (!date) return 0;
+      const ms = Date.parse(date);
+      if (Number.isNaN(ms)) return 0;
+      const ageDays = (Date.now() - ms) / 86400000;
+      if (windowDays === 'all') return Math.max(0, 30 - Math.min(30, ageDays / 30));
+      const limit = Number(windowDays || 365);
+      if (ageDays > limit) return -12;
+      const remaining = limit - ageDays;
+      return Math.max(0, Math.round((remaining / limit) * 20));
+    }
+
+    function getEnabledSources() {
+      const filters = state.settings.sourceFilters || { guideline: true, article: true, trial: true };
+      return Object.entries(filters).filter(([, v]) => v).map(([k]) => k);
+    }
+
+    function extractSnippet(text, query) {
+      const sentences = (text || '').match(/[^\.\!\?]+[\.\!\?]+/g) || [text || ''];
+      const q = tokenize(query);
+      const scored = sentences.map((s, idx) => {
+        const lower = normalizeText(s);
+        let score = q.reduce((sum, token) => sum + (lower.includes(token) ? 1 : 0), 0);
+        score += Math.max(0, 3 - idx * 0.3);
+        return { s: s.trim(), score };
+      }).sort((a, b) => b.score - a.score).filter(x => x.score > 0);
+      return (scored[0]?.s || sentences[0] || text || '').trim();
+    }
+
+    function answerQuery() {
+      const query = els.question.value.trim();
+      if (!query) {
+        els.answer.innerHTML = '<strong>Ask a clinical question to search the repository.</strong>';
+        return;
+      }
+      const selectedSources = Array.from(els.askSource.selectedOptions).map(o => o.value);
+      const ranked = state.documents
+        .map(doc => rankDocument(doc, query, selectedSources))
+        .filter(Boolean)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Number(state.settings.maxResults || 5));
+
+      if (!ranked.length || ranked[0].score <= 0) {
+        els.answer.innerHTML = `
+          <div class="fallback">Not found in the repository.</div>
+          <p>The agent did not find a strong match for: <em>${escapeHtml(query)}</em></p>
+          <p class="small">Try broadening the query, adjusting keywords, or adding more evidence to the repository.</p>
+        `;
+        renderRepository();
+        return;
+      }
+
+      const best = ranked[0];
+      const bullets = ranked.map(r => {
+        const snippet = extractSnippet(r.text, query);
+        const cite = state.settings.includeCitations ? `<strong>${escapeHtml(r.citation || r.id)}</strong>` : '<strong>Source</strong>';
+        return `<li><span>${escapeHtml(r.title)}</span> — ${escapeHtml(snippet)} ${state.settings.includeCitations ? `(${cite})` : ''}</li>`;
+      }).join('');
+
+      const synthesis = state.settings.shortSynthesis
+        ? `The strongest match is <strong>${escapeHtml(best.title)}</strong>, which supports the following repository-based takeaways: ${ranked.slice(0, 3).map(r => escapeHtml(extractSnippet(r.text, query))).join(' ')}.`
+        : `Based on the repository, the most relevant evidence begins with <strong>${escapeHtml(best.title)}</strong>. Review the ranked sources below for the exact passages and citations.`;
+
+      els.answer.innerHTML = `
+        <strong>Answer built from on-file evidence.</strong>
+        <p>${synthesis}</p>
+        <ol>${bullets}</ol>
+        <p class="small">Ranking reflects query match, keyword alignment, source priority, and recency. No outside reasoning was added.</p>
+      `;
+      renderRepository();
+    }
+
+    function renderStats() {
+      const docs = state.documents;
+      const byType = type => docs.filter(d => d.type === type).length;
+      const lastUpdate = docs.reduce((latest, d) => {
+        if (!d.date) return latest;
+        return !latest || d.date > latest ? d.date : latest;
+      }, '');
+      const queueCount = state.crawlQueue.length;
+      els.stats.innerHTML = [
+        { num: docs.length, label: 'documents on file' },
+        { num: byType('guideline'), label: 'guidelines' },
+        { num: byType('article'), label: 'articles' },
+        { num: byType('trial'), label: 'trials' }
+      ].map(s => `<div class="stat"><div class="num">${s.num}</div><div class="label">${s.label}</div></div>`).join('');
+      if (lastUpdate) {
+        els.stats.innerHTML += `<div class="stat"><div class="num">${queueCount}</div><div class="label">queued crawl items</div></div>`;
+      }
+      els.contract.textContent = JSON.stringify(backendContract, null, 2);
+    }
+
+    function renderRepository(preselected = null) {
+      const docs = preselected || [...state.documents].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      const listHtml = docs.map(doc => {
+        return `
+          <div class="source-card">
+            <div class="source-top">
+              <div>
+                ${sourceBadge(doc.type)}
+                <h3 style="margin-top:8px;margin-bottom:6px;">${escapeHtml(doc.title)}</h3>
+                <div class="meta">${escapeHtml(doc.citation || 'No citation')} · ${escapeHtml(doc.date || 'No date')} · ${escapeHtml(doc.population || 'No population noted')}</div>
+              </div>
+              <div class="score">${doc.score != null ? `score: ${Math.round(doc.score)}` : ''}</div>
+            </div>
+            <div class="snippet">${escapeHtml(extractSnippet(doc.text || '', doc.title || ''))}</div>
+            <div class="meta"><strong>Keywords:</strong> ${escapeHtml((doc.keywords || []).join(', ') || 'None')}
+              <br /><strong>Topic:</strong> ${escapeHtml(doc.intervention || 'Not specified')}</div>
+          </div>
+        `;
+      }).join('');
+
+      els.repoList.innerHTML = listHtml || '<div class="small">No documents available.</div>';
+      els.repoPreview.innerHTML = docs.slice(0, 6).map(doc => `
+        <div class="repo-item">
+          <div>${sourceBadge(doc.type)}</div>
+          <h4>${escapeHtml(doc.title)}</h4>
+          <div class="small">${escapeHtml(doc.citation || 'No citation')} · ${escapeHtml(doc.date || 'No date')}</div>
+          <div class="small"><strong>Keywords:</strong> ${escapeHtml((doc.keywords || []).join(', ') || 'None')}</div>
+          <div class="snippet">${escapeHtml((doc.text || '').slice(0, 200))}${(doc.text || '').length > 200 ? '…' : ''}</div>
+          <div class="actions">
+            <button class="ghost" data-copy="${doc.id}">Copy citation</button>
+            <button class="danger" data-delete="${doc.id}">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      els.repoPreview.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const doc = state.documents.find(d => d.id === btn.dataset.copy);
+          navigator.clipboard.writeText(doc?.citation || '').then(() => alert('Citation copied.'));
+        });
+      });
+      els.repoPreview.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.documents = state.documents.filter(d => d.id !== btn.dataset.delete);
+          saveState();
+        });
+      });
+    }
+
+    function renderCrawlQueue() {
+      els.crawlList.innerHTML = state.crawlQueue.length ? state.crawlQueue.map(item => `
+        <div class="source-card">
+          <div class="source-top">
+            <div>
+              ${sourceBadge(item.type)}
+              <h3 style="margin-top:8px;margin-bottom:6px;">${escapeHtml(item.title)}</h3>
+              <div class="meta">${escapeHtml(item.citation || 'No citation')} · ${escapeHtml(item.date || 'No date')} · ${escapeHtml(item.status || 'queued')}</div>
+            </div>
+            <div class="score">${item.status === 'queued' ? 'waiting' : 'processed'}</div>
+          </div>
+          <div class="snippet">${escapeHtml((item.text || '').slice(0, 220))}${(item.text || '').length > 220 ? '…' : ''}</div>
+        </div>
+      `).join('') : '<div class="small">No queued items.</div>';
+    }
+
+    function syncUiFromState() {
+      els.keywords.value = state.settings.keywords || '';
+      els.exclude.value = state.settings.exclude || '';
+      els.recency.value = String(state.settings.recency || '365');
+      els.maxResults.value = String(state.settings.maxResults || 5);
+      els.strictMode.checked = !!state.settings.strictMode;
+      els.includeCitations.checked = !!state.settings.includeCitations;
+      els.shortSynthesis.checked = !!state.settings.shortSynthesis;
+      els.autoIndex.checked = !!state.settings.autoIndex;
+      els.requireExact.checked = !!state.settings.requireExact;
+      ['guideline','article','trial'].forEach(t => {
+        const cb = document.getElementById(`src${t[0].toUpperCase()}${t.slice(1)}`);
+        if (cb) cb.checked = state.settings.sourceFilters?.[t] ?? true;
+      });
+      els.askSource.innerHTML = ['guideline','article','trial'].map(t => `<option value="${t}">${t[0].toUpperCase() + t.slice(1)}</option>`).join('');
+      [...els.askSource.options].forEach(o => o.selected = !!state.settings.sourceFilters?.[o.value]);
+      els.contract.textContent = JSON.stringify(backendContract, null, 2);
+    }
+
+    function collectSettingsFromUi() {
+      return {
+        keywords: els.keywords.value.trim(),
+        exclude: els.exclude.value.trim(),
+        recency: els.recency.value,
+        maxResults: Number(els.maxResults.value || 5),
+        strictMode: els.strictMode.checked,
+        includeCitations: els.includeCitations.checked,
+        shortSynthesis: els.shortSynthesis.checked,
+        autoIndex: els.autoIndex.checked,
+        requireExact: els.requireExact.checked,
+        sourceFilters: {
+          guideline: document.getElementById('srcGuideline').checked,
+          article: document.getElementById('srcArticle').checked,
+          trial: document.getElementById('srcTrial').checked
+        }
+      };
+    }
+
+    function addDocument(doc) {
+      state.documents.unshift({
+        id: doc.id || cryptoId(),
+        title: doc.title || 'Untitled document',
+        type: doc.type || 'article',
+        date: doc.date || new Date().toISOString().slice(0, 10),
+        citation: doc.citation || `source-${Date.now()}`,
+        population: doc.population || '',
+        intervention: doc.intervention || '',
+        keywords: Array.isArray(doc.keywords) ? doc.keywords : tokenize(doc.keywords || ''),
+        text: doc.text || '',
+        sourceUrl: doc.sourceUrl || ''
+      });
+      saveState();
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    function parseImportedContent(name, text) {
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      if (ext === 'json') {
+        const parsed = JSON.parse(text);
+        return Array.isArray(parsed) ? parsed : (parsed.documents || [parsed]);
+      }
+      if (ext === 'csv') {
+        const [header, ...rows] = text.trim().split(/\r?\n/);
+        const cols = header.split(',').map(x => x.trim());
+        return rows.map(row => {
+          const vals = row.split(',');
+          const obj = {};
+          cols.forEach((c, i) => obj[c] = (vals[i] || '').trim());
+          return {
+            title: obj.title || obj.name || 'Imported CSV document',
+            type: obj.type || 'article',
+            date: obj.date || new Date().toISOString().slice(0, 10),
+            citation: obj.citation || obj.id || `csv-${Date.now()}`,
+            population: obj.population || '',
+            intervention: obj.intervention || '',
+            keywords: tokenize(obj.keywords || ''),
+            text: obj.text || obj.abstract || JSON.stringify(obj)
+          };
+        });
+      }
+      return [{
+        title: name.replace(/\.[^.]+$/, ''),
+        type: 'article',
+        date: new Date().toISOString().slice(0, 10),
+        citation: `file-${Date.now()}`,
+        keywords: [],
+        text
+      }];
+    }
+
+    function queueCrawlItem(item) {
+      state.crawlQueue.unshift({ ...item, status: 'queued', id: item.id || cryptoId() });
+      saveState();
+    }
+
+    function processCrawlQueue() {
+      const queued = state.crawlQueue.filter(x => x.status === 'queued');
+      queued.forEach(item => {
+        addDocument({
+          title: item.title,
+          type: item.type,
+          date: item.date,
+          citation: item.citation,
+          keywords: tokenize(item.title + ' ' + item.text),
+          text: item.text,
+          population: '',
+          intervention: ''
+        });
+      });
+      state.crawlQueue = state.crawlQueue.map(item => item.status === 'queued' ? { ...item, status: 'processed' } : item);
+      saveState();
+      els.importHint.textContent = queued.length ? `Processed ${queued.length} queued item(s) into the repository.` : 'No queued items to process.';
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify({ documents: state.documents, settings: state.settings, crawlQueue: state.crawlQueue }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'obesity-evidence-agent-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetDefaults() {
+      state.documents = [...sampleDocuments];
+      state.crawlQueue = [];
+      state.settings = {
+        keywords: 'obesity, glp-1, bariatric surgery, diabetes',
+        exclude: 'animal study, editorial',
+        recency: '365',
+        maxResults: 5,
+        strictMode: true,
+        includeCitations: true,
+        shortSynthesis: true,
+        autoIndex: true,
+        requireExact: true,
+        sourceFilters: { guideline: true, article: true, trial: true }
+      };
+      syncUiFromState();
+      saveState();
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+    }
+
+    els.askBtn.addEventListener('click', () => {
+      state.settings = { ...state.settings, ...collectSettingsFromUi() };
+      saveState();
+      answerQuery();
+    });
+
+    els.clearBtn.addEventListener('click', () => {
+      els.question.value = '';
+      els.answer.innerHTML = '<strong>Ready.</strong> Ask a question and I’ll return the most relevant repository evidence.';
+    });
+
+    els.addDocBtn.addEventListener('click', () => {
+      const title = document.getElementById('docTitle').value.trim();
+      const type = document.getElementById('docType').value;
+      const date = document.getElementById('docDate').value || new Date().toISOString().slice(0, 10);
+      const citation = document.getElementById('docCitation').value.trim() || `source-${Date.now()}`;
+      const keywords = tokenize(document.getElementById('docKeywords').value);
+      const population = document.getElementById('docPopulation').value.trim();
+      const intervention = document.getElementById('docIntervention').value.trim();
+      const text = document.getElementById('docText').value.trim();
+      if (!title || !text) {
+        alert('Please provide at least a title and text.');
+        return;
+      }
+      addDocument({ title, type, date, citation, keywords, population, intervention, text });
+      ['docTitle','docCitation','docKeywords','docPopulation','docIntervention','docText'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('docType').value = type;
+      els.importHint.textContent = 'Document added to the repository.';
+    });
+
+    els.fileImport.addEventListener('change', async () => {
+      const file = els.fileImport.files?.[0];
+      if (!file) return;
+      try {
+        const text = await readFileAsText(file);
+        const items = parseImportedContent(file.name, text);
+        items.forEach(item => {
+          const doc = {
+            title: item.title || file.name,
+            type: item.type || 'article',
+            date: item.date || new Date().toISOString().slice(0, 10),
+            citation: item.citation || `import-${Date.now()}`,
+            population: item.population || '',
+            intervention: item.intervention || '',
+            keywords: item.keywords || tokenize([item.title, item.text].join(' ')),
+            text: item.text || item.abstract || '',
+            sourceUrl: item.sourceUrl || ''
+          };
+          if (state.settings.autoIndex) addDocument(doc);
+          else queueCrawlItem({ ...doc, status: 'queued' });
+        });
+        els.importHint.textContent = `Imported ${items.length} item(s) from ${file.name}.`;
+      } catch (err) {
+        console.error(err);
+        alert('Import failed. Use TXT, MD, JSON, or CSV.');
+      } finally {
+        els.fileImport.value = '';
+      }
+    });
+
+    els.exportBtn.addEventListener('click', exportJson);
+
+    els.resetRepoBtn.addEventListener('click', () => {
+      if (confirm('Reset the repository to the sample obesity evidence set?')) resetDefaults();
+    });
+
+    els.saveSettingsBtn.addEventListener('click', () => {
+      state.settings = { ...state.settings, ...collectSettingsFromUi() };
+      saveState();
+      els.importHint.textContent = 'Settings saved locally.';
+    });
+
+    els.loadDefaultsBtn.addEventListener('click', () => {
+      state.settings.keywords = 'obesity, glp-1, bariatric surgery, diabetes';
+      state.settings.exclude = 'animal study, editorial';
+      state.settings.recency = '365';
+      state.settings.maxResults = 5;
+      state.settings.strictMode = true;
+      state.settings.includeCitations = true;
+      state.settings.shortSynthesis = true;
+      state.settings.autoIndex = true;
+      state.settings.requireExact = true;
+      state.settings.sourceFilters = { guideline: true, article: true, trial: true };
+      syncUiFromState();
+      saveState();
+      els.importHint.textContent = 'Default settings restored.';
+    });
+
+    els.queueCrawlBtn.addEventListener('click', () => {
+      const title = document.getElementById('crawlTitle').value.trim();
+      const type = document.getElementById('crawlType').value;
+      const citation = document.getElementById('crawlCitation').value.trim();
+      const date = document.getElementById('crawlDate').value || new Date().toISOString().slice(0, 10);
+      const text = document.getElementById('crawlText').value.trim();
+      if (!title || !text) {
+        alert('Please provide a crawl item title and text.');
+        return;
+      }
+      queueCrawlItem({ title, type, citation, date, text });
+      ['crawlTitle','crawlCitation','crawlText'].forEach(id => document.getElementById(id).value = '');
+    });
+
+    els.processCrawlBtn.addEventListener('click', processCrawlQueue);
+    els.clearCrawlBtn.addEventListener('click', () => {
+      state.crawlQueue = [];
+      saveState();
+      els.importHint.textContent = 'Crawler queue cleared.';
+    });
+
+    // Persist settings from toggles on change.
+    ['strictMode','includeCitations','shortSynthesis','autoIndex','requireExact','recency','maxResults'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        state.settings = { ...state.settings, ...collectSettingsFromUi() };
+        saveState();
+      });
+    });
+    ['srcGuideline','srcArticle','srcTrial','keywords','exclude'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        state.settings = { ...state.settings, ...collectSettingsFromUi() };
+        saveState();
+      });
+    });
+    document.getElementById('askSource').addEventListener('change', () => {
+      state.settings = { ...state.settings, ...collectSettingsFromUi() };
+      saveState();
+    });
+
+    // Keyboard shortcut: Enter/Ctrl+Enter in question box to ask.
+    els.question.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        els.askBtn.click();
+      }
+    });
+
+    function renderAll() {
+      syncUiFromState();
+      renderStats();
+      renderRepository();
+      renderCrawlQueue();
+      saveState();
+    }
+
+    // Initialize
+    renderAll();
+
+    // Keep settings sync in case user opens multiple tabs.
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        const fresh = loadState();
+        state.documents = fresh.documents;
+        state.settings = fresh.settings;
+        state.crawlQueue = fresh.crawlQueue;
+        syncUiFromState();
+        renderStats();
+        renderRepository();
+        renderCrawlQueue();
+      }
+    });
+  </script>
+</body>
+</html>

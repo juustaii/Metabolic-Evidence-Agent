@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: obesity-evidence-agent
+    env: docker
+    plan: starter
+    autoDeploy: true

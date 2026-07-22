@@ -1,0 +1,79 @@
+{
+  "documents": [
+    {
+      "id": "guideline-2026-01",
+      "title": "Obesity management guideline for adults",
+      "type": "guideline",
+      "date": "2026-01-15",
+      "citation": "guideline-2026-01",
+      "population": "Adults with obesity and cardiometabolic risk",
+      "intervention": "Lifestyle therapy, pharmacotherapy, bariatric surgery",
+      "keywords": ["obesity", "adults", "glp-1", "bariatric surgery", "bmi"],
+      "text": "Recommends stepwise obesity treatment using intensive lifestyle intervention, anti-obesity pharmacotherapy for eligible patients, and bariatric surgery for selected individuals with severe obesity. GLP-1 receptor agonists may be considered for adults who meet clinical criteria. Evidence quality is highest when outcomes are supported by randomized trials and long-term follow-up.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "article-2025-11-glp1",
+      "title": "Journal article on GLP-1 therapy in obesity",
+      "type": "article",
+      "date": "2025-11-02",
+      "citation": "article-2025-11-glp1",
+      "population": "Adults with obesity and type 2 diabetes",
+      "intervention": "GLP-1 therapy",
+      "keywords": ["glp-1", "diabetes", "obesity", "weight loss", "outcomes"],
+      "text": "This article reports clinically meaningful weight reduction, improved glycemic outcomes, and tolerability considerations in adults with obesity and diabetes. The article discusses adherence, adverse effects, and the importance of shared decision-making. The authors emphasize that results should be interpreted in the context of existing obesity guidelines.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "trial-NCT-OBESITY-2041",
+      "title": "Active clinical trial registry entry",
+      "type": "trial",
+      "date": "2026-04-20",
+      "citation": "trial-NCT-OBESITY-2041",
+      "population": "Adults with severe obesity",
+      "intervention": "Next-generation incretin therapy",
+      "keywords": ["trial", "obesity", "incretin", "phase 3", "recruiting"],
+      "text": "Recruiting phase 3 trial evaluating a next-generation incretin therapy for adults with severe obesity. Eligibility focuses on BMI thresholds, safety criteria, and prior treatment history. Primary outcomes include weight loss, metabolic markers, and adverse event reporting.",
+      "sourceUrl": ""
+    },
+    {
+      "id": "article-2025-09-peds",
+      "title": "Pediatric obesity review",
+      "type": "article",
+      "date": "2025-09-10",
+      "citation": "article-2025-09-peds",
+      "population": "Children and adolescents with obesity",
+      "intervention": "Family-based behavioral treatment",
+      "keywords": ["pediatric obesity", "children", "adolescents", "family-based", "behavioral treatment"],
+      "text": "Summarizes pediatric obesity management emphasizing family-based behavioral treatment, nutrition counseling, physical activity, and careful consideration of medication use. The review highlights the need for age-appropriate assessment and ongoing monitoring.",
+      "sourceUrl": ""
+    }
+  ],
+  "settings": {
+    "keywords": "obesity, glp-1, bariatric surgery, diabetes",
+    "exclude": "animal study, editorial",
+    "recency": "365",
+    "maxResults": 5,
+    "strictMode": true,
+    "includeCitations": true,
+    "shortSynthesis": true,
+    "autoIndex": true,
+    "requireExact": true,
+    "sourceFilters": {
+      "guideline": true,
+      "article": true,
+      "trial": true
+    }
+  },
+  "crawlQueue": [
+    {
+      "id": "crawl-1",
+      "title": "Incoming guideline update",
+      "type": "guideline",
+      "date": "2026-07-01",
+      "citation": "crawler-guideline-update-1",
+      "text": "New obesity guideline update with expanded coverage of medication use, follow-up cadence, and evidence-based thresholds for escalation of therapy.",
+      "status": "queued"
+    }
+  ]
+}

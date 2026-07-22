@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.conversations/
+conversations/
+memories/
+large_tool_results/
+*.log

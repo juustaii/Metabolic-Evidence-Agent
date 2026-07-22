@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY obesity_evidence_api.py ./obesity_evidence_api.py
+COPY obesity-evidence-agent.html ./obesity-evidence-agent.html
+COPY obesity_evidence_store.json ./obesity_evidence_store.json
+COPY obesity-evidence-agent-README.md ./README.md
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "uvicorn obesity_evidence_api:app --host 0.0.0.0 --port ${PORT:-8000}"]
