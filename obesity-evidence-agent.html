@@ -794,22 +794,28 @@
 }
 
     function renderStats() {
-      
-        if (!d.date) return latest;
-        return !latest || d.date > latest ? d.date : latest;
-      }, '');
-      const queueCount = state.crawlQueue.length;
-      els.stats.innerHTML = [
-        { num: docs.length, label: 'documents on file' },
-        { num: byType('guideline'), label: 'guidelines' },
-        { num: byType('article'), label: 'articles' },
-        { num: byType('trial'), label: 'trials' }
-      ].map(s => `<div class="stat"><div class="num">${s.num}</div><div class="label">${s.label}</div></div>`).join('');
-      if (lastUpdate) {
-        els.stats.innerHTML += `<div class="stat"><div class="num">${queueCount}</div><div class="label">queued crawl items</div></div>`;
-      }
-      els.contract.textContent = JSON.stringify(backendContract, null, 2);
-    }
+  const docs = state.documents || [];
+  const byType = type => docs.filter(d => d.type === type).length;
+  const lastUpdate = docs.reduce((latest, d) => {
+    if (!d.date) return latest;
+    return !latest || d.date > latest ? d.date : latest;
+  }, '');
+
+  const queueCount = (state.crawlQueue || []).length;
+  els.stats.innerHTML = [
+    { num: docs.length, label: 'documents on file' },
+    { num: byType('guideline'), label: 'guidelines' },
+    { num: byType('article'), label: 'articles' },
+    { num: byType('trial'), label: 'trials' }
+  ].map(s => `<div class="stat"><div class="num">${s.num}</div><div class="label">${s.label}</div></div>`).join('');
+
+  if (lastUpdate) {
+    els.stats.innerHTML += `<div class="stat"><div class="num">${queueCount}</div><div class="label">queued crawl items</div></div>`;
+  }
+  if (els.contract) {
+    els.contract.textContent = JSON.stringify(backendContract, null, 2);
+  }
+}
 
     function renderRepository(preselected = null) {
       const docs = preselected || [...state.documents].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
