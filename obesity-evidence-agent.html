@@ -794,9 +794,7 @@
 }
 
     function renderStats() {
-      const docs = state.documents;
-      const byType = type => docs.filter(d => d.type === type).length;
-      const lastUpdate = docs.reduce((latest, d) => {
+      
         if (!d.date) return latest;
         return !latest || d.date > latest ? d.date : latest;
       }, '');
