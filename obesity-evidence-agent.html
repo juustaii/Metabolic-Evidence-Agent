@@ -638,7 +638,7 @@
       return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
 
-    async function loadState() {
+   async function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
   let localData = raw ? JSON.parse(raw) : {};
 
@@ -656,37 +656,6 @@
 
   return localData;
 }
-      
-      try {
-        const parsed = JSON.parse(raw);
-        return {
-          documents: parsed.documents?.length ? parsed.documents : [...sampleDocuments],
-          settings: {
-            ...parsed.settings,
-            sourceFilters: parsed.settings?.sourceFilters || { guideline: true, article: true, trial: true }
-          },
-          crawlQueue: parsed.crawlQueue || []
-        };
-      } catch {
-        return {
-          documents: [...sampleDocuments],
-          settings: {
-            keywords: 'obesity, glp-1, bariatric surgery, diabetes',
-            exclude: 'animal study, editorial',
-            recency: '365',
-            maxResults: 5,
-            strictMode: true,
-            includeCitations: true,
-            shortSynthesis: true,
-            autoIndex: true,
-            requireExact: true,
-            sourceFilters: { guideline: true, article: true, trial: true }
-          },
-          crawlQueue: []
-        };
-      }
-    }
-
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       renderStats();
