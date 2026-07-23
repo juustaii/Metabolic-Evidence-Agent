@@ -36,7 +36,6 @@ def crypto_id() -> str:
 
 
 def today_iso() -> str:
-    return date.today().isoformat()
 def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
     filename_lower = filename.lower()
     text = ""
