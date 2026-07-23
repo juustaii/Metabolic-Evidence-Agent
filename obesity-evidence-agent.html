@@ -833,54 +833,33 @@
   }
 }
 
-    function renderRepository(preselected = null) {
-      const docs = preselected || [...state.documents].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      const listHtml = docs.map(doc => {
-        return `
-          <div class="source-card">
-            <div class="source-top">
-              <div>
-                ${sourceBadge(doc.type)}
-                <h3 style="margin-top:8px;margin-bottom:6px;">${escapeHtml(doc.title)}</h3>
-                <div class="meta">${escapeHtml(doc.citation || 'No citation')} · ${escapeHtml(doc.date || 'No date')} · ${escapeHtml(doc.population || 'No population noted')}</div>
-              </div>
-              <div class="score">${doc.score != null ? `score: ${Math.round(doc.score)}` : ''}</div>
-            </div>
-            <div class="snippet">${escapeHtml(extractSnippet(doc.text || '', doc.title || ''))}</div>
-            <div class="meta"><strong>Keywords:</strong> ${escapeHtml((doc.keywords || []).join(', ') || 'None')}
-              <br /><strong>Topic:</strong> ${escapeHtml(doc.intervention || 'Not specified')}</div>
-          </div>
-        `;
-      }).join('');
+ function renderRepository(preselected = null) {
+  const docs = preselected || (Array.isArray(state.documents) ? [...state.documents] : []);
+  
+  if (!docs.length) {
+    if (els.repoList) els.repoList.innerHTML = '<div class="small">No documents in repository.</div>';
+    return;
+  }
 
-      els.repoList.innerHTML = listHtml || '<div class="small">No documents available.</div>';
-      els.repoPreview.innerHTML = docs.slice(0, 6).map(doc => `
-        <div class="repo-item">
-          <div>${sourceBadge(doc.type)}</div>
-          <h4>${escapeHtml(doc.title)}</h4>
-          <div class="small">${escapeHtml(doc.citation || 'No citation')} · ${escapeHtml(doc.date || 'No date')}</div>
-          <div class="small"><strong>Keywords:</strong> ${escapeHtml((doc.keywords || []).join(', ') || 'None')}</div>
-          <div class="snippet">${escapeHtml((doc.text || '').slice(0, 200))}${(doc.text || '').length > 200 ? '…' : ''}</div>
-          <div class="actions">
-            <button class="ghost" data-copy="${doc.id}">Copy citation</button>
-            <button class="danger" data-delete="${doc.id}">Delete</button>
+  const listHtml = docs.sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(doc => {
+    return `
+      <div class="source-card">
+        <div class="source-top">
+          <div>
+            ${sourceBadge(doc.type)}
+            <h3 style="margin-top:8px;margin-bottom:6px;">${escapeHtml(doc.title)}</h3>
+            <div class="meta">${escapeHtml(doc.citation || 'No citation')} • ${escapeHtml(doc.date || 'No date')}</div>
           </div>
+          <div class="score">${doc.population ? escapeHtml(doc.population) : ''}</div>
         </div>
-      `).join('');
+        <div class="snippet">${escapeHtml((doc.text || '').slice(0, 220))}...</div>
+        <div class="small" style="margin-top:8px;"><strong>Intervention:</strong> ${escapeHtml(doc.intervention || 'N/A')}</div>
+      </div>
+    `;
+  }).join('');
 
-      els.repoPreview.querySelectorAll('[data-copy]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const doc = state.documents.find(d => d.id === btn.dataset.copy);
-          navigator.clipboard.writeText(doc?.citation || '').then(() => alert('Citation copied.'));
-        });
-      });
-      els.repoPreview.querySelectorAll('[data-delete]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.documents = state.documents.filter(d => d.id !== btn.dataset.delete);
-          saveState();
-        });
-      });
-    }
+  if (els.repoList) els.repoList.innerHTML = listHtml;
+}
 
     function renderCrawlQueue() {
       els.crawlList.innerHTML = state.crawlQueue.length ? state.crawlQueue.map(item => `
