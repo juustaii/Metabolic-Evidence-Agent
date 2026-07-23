@@ -36,6 +36,9 @@ def crypto_id() -> str:
 
 
 def today_iso() -> str:
+    return date.today().isoformat()
+
+
 def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
     filename_lower = filename.lower()
     text = ""
@@ -57,7 +60,6 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
         text = file_bytes.decode('utf-8', errors='ignore')
 
     return text.strip()
-    
     DEFAULT_STATE: Dict[str, Any] = {
     "documents": [
         {
