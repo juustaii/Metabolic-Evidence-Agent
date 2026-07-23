@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 import csv
 import io
+from pypdf import PdfReader
+from docx import Document
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,9 +37,29 @@ def crypto_id() -> str:
 
 def today_iso() -> str:
     return date.today().isoformat()
+def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
+    filename_lower = filename.lower()
+    text = ""
 
+    if filename_lower.endswith('.pdf'):
+        reader = PdfReader(io.BytesIO(file_bytes))
+        for page in reader.pages:
+            extracted = page.extract_text()
+            if extracted:
+                text += extracted + "\n"
 
-DEFAULT_STATE: Dict[str, Any] = {
+    elif filename_lower.endswith('.docx'):
+        doc = Document(io.BytesIO(file_bytes))
+        for para in doc.paragraphs:
+            if para.text:
+                text += para.text + "\n"
+
+    else:
+        text = file_bytes.decode('utf-8', errors='ignore')
+
+    return text.strip()
+    
+    DEFAULT_STATE: Dict[str, Any] = {
     "documents": [
         {
             "id": "guideline-2026-01",
@@ -147,9 +169,29 @@ def tokenize(text: str) -> List[str]:
     return [token for token in normalize_text(text).split(" ") if token]
 
 
-def parse_uploaded_documents(filename: str, content: str) -> List[Dict[str, Any]]:
+def parse_uploaded_documents(filename: str, file_bytes: bytes) -> List[Dict[str, Any]]:
     ext = filename.split(".")[-1].lower() if "." in filename else ""
     now = today_iso()
+
+    # Process PDF and Word documents directly from binary bytes
+    if ext in ["pdf", "docx"]:
+        text = extract_text_from_file(file_bytes, filename)
+        title = filename.rsplit(".", 1)[0]
+        return [{
+            "id": crypto_id(),
+            "title": title,
+            "type": "article",
+            "date": now,
+            "citation": f"{ext.upper()} Document ({filename})",
+            "population": "",
+            "intervention": "",
+            "keywords": [],
+            "text": text,
+            "sourceUrl": ""
+        }]
+
+    # Decode text for JSON/CSV formats
+    content = file_bytes.decode("utf-8", errors="ignore")
 
     if ext == "json":
         parsed = json.loads(content)
@@ -166,16 +208,16 @@ def parse_uploaded_documents(filename: str, content: str) -> List[Dict[str, Any]
             if not isinstance(item, dict):
                 continue
             docs.append({
-                "id": item.get("id") or f"upload-{datetime.utcnow().timestamp()}",
+                "id": item.get("id") or crypto_id(),
                 "title": item.get("title") or filename,
                 "type": item.get("type") or "article",
                 "date": item.get("date") or now,
-                "citation": item.get("citation") or item.get("id") or f"upload-{datetime.utcnow().timestamp()}",
+                "citation": item.get("citation") or item.get("id") or crypto_id(),
                 "population": item.get("population", ""),
                 "intervention": item.get("intervention", ""),
-                "keywords": item.get("keywords") if isinstance(item.get("keywords"), list) else tokenize(str(item.get("keywords", ""))),
+                "keywords": item.get("keywords") if isinstance(item.get("keywords"), list) else [],
                 "text": item.get("text") or item.get("abstract") or json.dumps(item),
-                "sourceUrl": item.get("sourceUrl", ""),
+                "sourceUrl": item.get("sourceUrl", "")
             })
         return docs
 
@@ -197,18 +239,21 @@ def parse_uploaded_documents(filename: str, content: str) -> List[Dict[str, Any]
             })
         return docs
 
+    # Fallback for standard PDF/DOCX or plain text files
+    text = extract_text_from_file(file_bytes, filename)
     title = Path(filename).stem or filename
+
     return [{
-        "id": f"upload-{datetime.utcnow().timestamp()}",
+        "id": crypto_id(),
         "title": title,
         "type": "article",
         "date": now,
-        "citation": f"file-{title}",
+        "citation": f"Uploaded File ({filename})",
         "population": "",
         "intervention": "",
-        "keywords": tokenize(title + " " + content),
-        "text": content,
-        "sourceUrl": "",
+        "keywords": tokenize(title + " " + text),
+        "text": text,
+        "sourceUrl": ""
     }]
 
 
@@ -473,26 +518,27 @@ def add_document(doc: DocumentModel):
 @app.post("/api/obesity-evidence/upload")
 async def upload_file(file: UploadFile = File(...)):
     state = load_state()
-    raw = await file.read()
-    try:
-        text = raw.decode("utf-8")
-    except UnicodeDecodeError:
-        text = raw.decode("utf-8", errors="ignore")
-
-    docs = parse_uploaded_documents(file.filename or "upload.txt", text)
+    file_bytes = await file.read()
+    
+    filename = file.filename or "upload.txt"
+    docs = parse_uploaded_documents(filename, file_bytes)
+    
     added = []
     for doc in docs:
         doc["keywords"] = doc.get("keywords") or tokenize(f"{doc.get('title', '')} {doc.get('text', '')}")
         state["documents"] = [d for d in state["documents"] if d.get("citation") != doc["citation"]]
         state["documents"].insert(0, doc)
         added.append(doc)
-
+    
+    save_state(state)
+    
     upload_dir = APP_DIR / "uploads"
     upload_dir.mkdir(exist_ok=True)
-    safe_name = Path(file.filename or "upload.txt").name
+    safe_name = Path(filename).name
     stored_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{safe_name}"
-    (upload_dir / stored_name).write_bytes(raw)
-
+    (upload_dir / stored_name).write_bytes(file_bytes)
+    
+    return {"status": "ok", "added": added}
     save_state(state)
     return {
         "filename": file.filename,
