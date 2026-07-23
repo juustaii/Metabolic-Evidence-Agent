@@ -899,23 +899,30 @@
     }
 
     function syncUiFromState() {
-      els.keywords.value = state.settings.keywords || '';
-      els.exclude.value = state.settings.exclude || '';
-      els.recency.value = String(state.settings.recency || '365');
-      els.maxResults.value = String(state.settings.maxResults || 5);
-      els.strictMode.checked = !!state.settings.strictMode;
-      els.includeCitations.checked = !!state.settings.includeCitations;
-      els.shortSynthesis.checked = !!state.settings.shortSynthesis;
-      els.autoIndex.checked = !!state.settings.autoIndex;
-      els.requireExact.checked = !!state.settings.requireExact;
-      ['guideline','article','trial'].forEach(t => {
-        const cb = document.getElementById(`src${t[0].toUpperCase()}${t.slice(1)}`);
-        if (cb) cb.checked = state.settings.sourceFilters?.[t] ?? true;
-      });
-      els.askSource.innerHTML = ['guideline','article','trial'].map(t => `<option value="${t}">${t[0].toUpperCase() + t.slice(1)}</option>`).join('');
-      [...els.askSource.options].forEach(o => o.selected = !!state.settings.sourceFilters?.[o.value]);
-      els.contract.textContent = JSON.stringify(backendContract, null, 2);
-    }
+  const settings = state.settings || {};
+  
+  if (els.keywords) els.keywords.value = settings.keywords || '';
+  if (els.exclude) els.exclude.value = settings.exclude || '';
+  if (els.recency) els.recency.value = String(settings.recency || '365');
+  if (els.maxResults) els.maxResults.value = String(settings.maxResults || 5);
+  if (els.strictMode) els.strictMode.checked = !!settings.strictMode;
+  if (els.includeCitations) els.includeCitations.checked = !!settings.includeCitations;
+  if (els.shortSynthesis) els.shortSynthesis.checked = !!settings.shortSynthesis;
+  if (els.autoIndex) els.autoIndex.checked = !!settings.autoIndex;
+  if (els.requireExact) els.requireExact.checked = !!settings.requireExact;
+
+  ['guideline', 'article', 'trial'].forEach(t => {
+    const cb = document.getElementById(`src${t[0].toUpperCase()}${t.slice(1)}`);
+    if (cb) cb.checked = settings.sourceFilters?.[t] ?? true;
+  });
+
+  if (els.askSource) {
+    els.askSource.innerHTML = ['guideline', 'article', 'trial'].map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+  if (els.contract) {
+    els.contract.textContent = JSON.stringify(backendContract, null, 2);
+  }
+}
 
     function collectSettingsFromUi() {
       return {
