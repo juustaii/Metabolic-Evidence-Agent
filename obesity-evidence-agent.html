@@ -972,40 +972,44 @@ async function uploadFileToBackend(file) {
     if (els.importHint) els.importHint.textContent = `Error connecting to backend server.`;
   }
 }
-    function parseImportedContent(name, text) {
-      const ext = (name.split('.').pop() || '').toLowerCase();
-      if (ext === 'json') {
-        const parsed = JSON.parse(text);
-        return Array.isArray(parsed) ? parsed : (parsed.documents || [parsed]);
-      }
-      if (ext === 'csv') {
-        const [header, ...rows] = text.trim().split(/\r?\n/);
-        const cols = header.split(',').map(x => x.trim());
-        return rows.map(row => {
-          const vals = row.split(',');
-          const obj = {};
-          cols.forEach((c, i) => obj[c] = (vals[i] || '').trim());
-          return {
-            title: obj.title || obj.name || 'Imported CSV document',
-            type: obj.type || 'article',
-            date: obj.date || new Date().toISOString().slice(0, 10),
-            citation: obj.citation || obj.id || `csv-${Date.now()}`,
-            population: obj.population || '',
-            intervention: obj.intervention || '',
-            keywords: tokenize(obj.keywords || ''),
-            text: obj.text || obj.abstract || JSON.stringify(obj)
-          };
-        });
-      }
-      return [{
-        title: name.replace(/\.[^.]+$/, ''),
-        type: 'article',
-        date: new Date().toISOString().slice(0, 10),
-        citation: `file-${Date.now()}`,
-        keywords: [],
-        text
-      }];
-    }
+   function parseImportedContent(name, text) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  
+  if (ext === 'json') {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : (parsed.documents || [parsed]);
+  }
+  
+  if (ext === 'csv') {
+    const [header, ...rows] = text.trim().split(/\r?\n/);
+    const cols = header.split(',').map(x => x.trim());
+    return rows.map(row => {
+      const vals = row.split(',');
+      const obj = {};
+      cols.forEach((c, i) => obj[c] = (vals[i] || '').trim());
+      return {
+        title: obj.title || obj.name || 'Imported CSV document',
+        type: obj.type || 'article',
+        date: obj.date || new Date().toISOString().slice(0, 10),
+        citation: obj.citation || obj.id || `csv-${Date.now()}`,
+        population: obj.population || '',
+        intervention: obj.intervention || '',
+        keywords: tokenize(obj.keywords || ''),
+        text: obj.text || obj.abstract || JSON.stringify(obj)
+      };
+    });
+  }
+
+  // Fallback for PDF, Word (.docx), or plain text files processed as raw text
+  return [{
+    title: name.replace(/\.[^/.]+$/, ''),
+    type: 'article',
+    date: new Date().toISOString().slice(0, 10),
+    citation: `${ext.toUpperCase()} File (${name})`,
+    keywords: [],
+    text: text || ''
+  }];
+}
 
     function queueCrawlItem(item) {
       state.crawlQueue.unshift({ ...item, status: 'queued', id: item.id || cryptoId() });
