@@ -862,21 +862,29 @@
 }
 
     function renderCrawlQueue() {
-      els.crawlList.innerHTML = state.crawlQueue.length ? state.crawlQueue.map(item => `
-        <div class="source-card">
-          <div class="source-top">
-            <div>
-              ${sourceBadge(item.type)}
-              <h3 style="margin-top:8px;margin-bottom:6px;">${escapeHtml(item.title)}</h3>
-              <div class="meta">${escapeHtml(item.citation || 'No citation')} · ${escapeHtml(item.date || 'No date')} · ${escapeHtml(item.status || 'queued')}</div>
-            </div>
-            <div class="score">${item.status === 'queued' ? 'waiting' : 'processed'}</div>
-          </div>
-          <div class="snippet">${escapeHtml((item.text || '').slice(0, 220))}${(item.text || '').length > 220 ? '…' : ''}</div>
-        </div>
-      `).join('') : '<div class="small">No queued items.</div>';
-    }
+  const queue = Array.isArray(state.crawlQueue) ? state.crawlQueue : [];
 
+  if (!els.crawlList) return;
+
+  if (!queue.length) {
+    els.crawlList.innerHTML = '<div class="small">No queued items.</div>';
+    return;
+  }
+
+  els.crawlList.innerHTML = queue.map(item => `
+    <div class="source-card">
+      <div class="source-top">
+        <div>
+          ${sourceBadge(item.type)}
+          <h3 style="margin-top:8px;margin-bottom:6px;">${escapeHtml(item.title)}</h3>
+          <div class="meta">${escapeHtml(item.citation || 'No citation')}</div>
+        </div>
+        <div class="score">${item.status === 'queued' ? 'waiting' : 'processed'}</div>
+      </div>
+      <div class="snippet">${escapeHtml((item.text || '').slice(0, 220))}...</div>
+    </div>
+  `).join('');
+}
     function syncUiFromState() {
   const settings = state.settings || {};
   
