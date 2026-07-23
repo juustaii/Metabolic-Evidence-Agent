@@ -61,7 +61,7 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
 
     return text.strip()
    
- DEFAULT_STATE: Dict[str, Any] = {
+DEFAULT_STATE: Dict[str, Any] = {
     "documents": [
         {
             "id": "guideline-2026-01",
