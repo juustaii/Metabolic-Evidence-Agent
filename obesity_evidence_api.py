@@ -60,7 +60,8 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
         text = file_bytes.decode('utf-8', errors='ignore')
 
     return text.strip()
-    DEFAULT_STATE: Dict[str, Any] = {
+   
+ DEFAULT_STATE: Dict[str, Any] = {
     "documents": [
         {
             "id": "guideline-2026-01",
@@ -135,7 +136,6 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
         }
     ],
 }
-
 
 def load_state() -> Dict[str, Any]:
     if not STORE_PATH.exists():
