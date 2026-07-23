@@ -912,23 +912,23 @@
 }
 
     function collectSettingsFromUi() {
-      return {
-        keywords: els.keywords.value.trim(),
-        exclude: els.exclude.value.trim(),
-        recency: els.recency.value,
-        maxResults: Number(els.maxResults.value || 5),
-        strictMode: els.strictMode.checked,
-        includeCitations: els.includeCitations.checked,
-        shortSynthesis: els.shortSynthesis.checked,
-        autoIndex: els.autoIndex.checked,
-        requireExact: els.requireExact.checked,
-        sourceFilters: {
-          guideline: document.getElementById('srcGuideline').checked,
-          article: document.getElementById('srcArticle').checked,
-          trial: document.getElementById('srcTrial').checked
-        }
-      };
+  return {
+    keywords: els.keywords?.value?.trim() || '',
+    exclude: els.exclude?.value?.trim() || '',
+    recency: els.recency?.value || '365',
+    maxResults: Number(els.maxResults?.value || 5),
+    strictMode: !!els.strictMode?.checked,
+    includeCitations: !!els.includeCitations?.checked,
+    shortSynthesis: !!els.shortSynthesis?.checked,
+    autoIndex: !!els.autoIndex?.checked,
+    requireExact: !!els.requireExact?.checked,
+    sourceFilters: {
+      guideline: !!document.getElementById('srcGuideline')?.checked,
+      article: !!document.getElementById('srcArticle')?.checked,
+      trial: !!document.getElementById('srcTrial')?.checked
     }
+  };
+}
 
     async function addDocument(doc) {
   try {
